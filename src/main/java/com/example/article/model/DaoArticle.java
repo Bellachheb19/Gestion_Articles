@@ -2,7 +2,7 @@ package com.example.article.model;
 
 import java.util.ArrayList;
 
-public class DaoArticle {
+/*public class DaoArticle {
     private ArrayList<Article> Articles ;
     private static DaoArticle Instance ;
     private DaoArticle(){
@@ -48,4 +48,107 @@ public class DaoArticle {
         Articles.remove(findByCode(C));
     }
 
+}*/
+
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+
+import java.util.List;
+
+public class DaoArticle {
+
+    private static DaoArticle instance;
+
+    private DaoArticle() {
+    }
+
+    public static DaoArticle getInstance() {
+        if (instance == null) {
+            instance = new DaoArticle();
+        }
+        return instance;
+    }
+
+    // READ ALL
+    public List<Article> findAll() {
+        try (Session session =
+                     HibernateUtil.getSessionFactory().openSession()) {
+
+            return session.createQuery(
+                    "FROM Article", Article.class
+            ).getResultList();
+        }
+    }
+
+    // READ BY CODE
+    public Article findByCode(String code) {
+        try (Session session =
+                     HibernateUtil.getSessionFactory().openSession()) {
+
+            return session.get(Article.class, code);
+        }
+    }
+
+    // CREATE
+    public void save(Article article) {
+        try (Session session =
+                     HibernateUtil.getSessionFactory().openSession()) {
+
+            Transaction tx = session.beginTransaction();
+
+            try {
+                session.persist(article);
+                tx.commit();
+            } catch (RuntimeException e) {
+                tx.rollback();
+                throw e;
+            }
+        }
+    }
+
+    // UPDATE
+    public void update(Article article) {
+        try (Session session =
+                     HibernateUtil.getSessionFactory().openSession()) {
+
+            Transaction tx = session.beginTransaction();
+
+            try {
+                Article existing =
+                        session.get(Article.class, article.getCode());
+
+                if (existing != null) {
+                    existing.setDesignation(article.getDesignation());
+                    existing.setPrix(article.getPrix());
+                }
+
+                tx.commit();
+            } catch (RuntimeException e) {
+                tx.rollback();
+                throw e;
+            }
+        }
+    }
+
+    // DELETE
+    public void delete(String code) {
+        try (Session session =
+                     HibernateUtil.getSessionFactory().openSession()) {
+
+            Transaction tx = session.beginTransaction();
+
+            try {
+                Article article = session.get(Article.class, code);
+
+                if (article != null) {
+                    session.remove(article);
+                }
+
+                tx.commit();
+            } catch (RuntimeException e) {
+                tx.rollback();
+                throw e;
+            }
+        }
+    }
 }
